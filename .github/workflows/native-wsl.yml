@@ -1,0 +1,175 @@
+name: Native and WSL
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    defaults:
+        run:
+          shell: ${{ matrix.configuration == 'wsl' && 'wsl-bash {0}' || 'pwsh' }}
+    strategy:
+      matrix:
+        os: [windows-latest]
+        node-version: [16, 14, 12, 10]
+        configuration: [wsl, native]
+        architecture: [x86, x64]
+    steps:
+    - uses: actions/checkout@v4
+    - uses: Vampire/setup-wsl@v3
+      if: matrix.configuration == 'wsl'
+      with:
+        distribution: Ubuntu-22.04
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      if: matrix.configuration == 'native'
+      with:
+        node-version: ${{ matrix.node-version }}
+    - name: Do everything here because npm is not found when running in separate steps
+      if: matrix.configuration == 'wsl'
+      run: |
+        export ESLINT_VERSION=7
+        sudo apt update -y
+        sudo apt-get install curl -y
+        curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/master/install.sh | bash
+        export NVM_DIR="$HOME/.nvm"
+        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+        [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+        nvm install ${{ matrix.node-version }}
+        nvm use ${{ matrix.node-version }}
+        node --version
+        if [ ${{ matrix.node-version }} -lt 11 ]; then
+          npm install --legacy-peer-deps
+        fi
+        if [ ${{ matrix.node-version }} -gt 10 ]; then
+          npm install
+        fi
+        npm install nyc@latest --no-save
+        set TRAVIS_NODE_VERSION=${{ matrix.node-version }}
+        if [ ${{ matrix.node-version }} -le 8 ]; then
+          set ESLINT_VERSION=6
+        fi
+        if [ ${{ matrix.node-version }} -gt 8 ]; then
+          set ESLINT_VERSION=7
+        fi
+        if [ ${{ matrix.node-version }} -ge 11 ]; then
+          set ESLINT_VERSION=8
+        fi
+        npm run copy-metafiles
+        # bash ./tests/dep-time-travel.sh 2>&1
+        npm install eslint@${ESLINT_VERSION} --no-save --ignore-scripts
+        if [ ${{ matrix.node-version }} -lt 12 ]; then
+          npm install @typescript-eslint/parser@4
+        fi
+        if [ ESLINT_VERSION -eq 8 ]; then
+          npm i --no-save eslint-plugin-import@'.' -f
+          npm run build
+        fi
+
+        git config core.symlinks true
+        git reset --hard
+        npm config set package-lock false
+        resolverDir="./resolvers"
+        for resolver in $resolverDir/*; do
+          if [ -d "$resolver" ]; then  # Add this line to check if $resolver is a directory
+            pushd $resolver
+            npm install
+            npm ls nyc > /dev/null
+            if [ $? -eq 0 ]; then
+              npm install nyc@latest --no-save
+            fi
+            popd
+          fi  # Close the if statement here
+        done
+        npm config set package-lock true
+        npm run pretest
+        npm run tests-only
+        resolverDir="./resolvers"
+        resolvers=()
+        for resolver in $resolverDir/*; do
+          if [ -d "$resolver" ]; then
+            resolvers+=($(realpath $resolver))
+          fi
+        done
+        export RESOLVERS=$(IFS=";"; echo "${resolvers[*]}")
+        for resolver in $resolvers; do
+          pushd $resolver
+          npm test
+          popd
+        done
+    - name: Install dependencies for Node <= 10
+      if: matrix.node-version <= '10' && matrix.configuration == 'native'
+      run: |
+        npm install --legacy-peer-deps
+        npm install eslint@7.32.0 --no-save
+    - name: Install dependencies for Node > 10
+      if: matrix.node-version > '10'  && matrix.configuration == 'native'
+      run: npm install
+    - name: Install the latest version of nyc
+      if: matrix.configuration == 'native'
+      run: npm install nyc@latest --no-save
+    - name: Copy metafiles for Node <= 8
+      if: matrix.node-version <= 8 && matrix.configuration == 'native'
+      env:
+        ESLINT_VERSION: 6
+        TRAVIS_NODE_VERSION: ${{ matrix.node-version }}
+      run: |
+        npm run copy-metafiles
+        bash ./tests/dep-time-travel.sh 2>&1
+    - name: Copy metafiles for Node > 8
+      if: matrix.node-version > 8 && matrix.configuration == 'native'
+      env:
+        ESLINT_VERSION: 7
+        TRAVIS_NODE_VERSION: ${{ matrix.node-version }}
+      run: |
+        npm run copy-metafiles
+        bash ./tests/dep-time-travel.sh 2>&1
+    - name: Config git to allow symlinks
+      if: matrix.configuration == 'native'
+      run: |
+        git config core.symlinks true
+        git reset --hard
+    - name: Install ./resolver dependencies in Native
+      if: matrix.configuration == 'native'
+      shell: pwsh
+      run: |
+        npm config set package-lock false
+        $resolverDir = "./resolvers"
+        Get-ChildItem -Directory $resolverDir |
+          ForEach {
+            Write-output $(Resolve-Path $(Join-Path $resolverDir  $_.Name))
+            Push-Location $(Resolve-Path $(Join-Path $resolverDir  $_.Name))
+              npm install
+              npm ls nyc > $null;
+              if ($?) {
+                npm install nyc@latest --no-save
+              }
+              Pop-Location
+            }
+        npm config set package-lock true
+    - name: Run tests in Native
+      if: matrix.configuration == 'native'
+      shell: pwsh
+      run: |
+        npm run pretest
+        npm run tests-only
+        $resolverDir = "./resolvers";
+        $resolvers = @();
+        Get-ChildItem -Directory $resolverDir |
+          ForEach {
+            $resolvers += "$(Resolve-Path $(Join-Path $resolverDir $_.Name))";
+          }
+        $env:RESOLVERS = [string]::Join(";", $resolvers);
+        foreach ($resolver in $resolvers) {
+            Set-Location -Path $resolver.Trim('"')
+            npm test
+            Set-Location -Path $PSScriptRoot
+        }
+    - name: Upload Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
+        file: ./coverage/coverage-final.json # optional
+        flags: unittests # optional
+        name: codecov-umbrella # optional
+        fail_ci_if_error: true # optional (default = false)

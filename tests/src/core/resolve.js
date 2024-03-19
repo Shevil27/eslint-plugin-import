@@ -113,7 +113,7 @@ describe('resolve', function () {
   });
 
   it('finds resolvers from the source files rather than eslint-module-utils', function () {
-    const testContext = utils.testContext({ 'import/resolver': { foo: {} } });
+    const testContext = utils.testContext({ 'import/resolver': { './foo-bar-resolver-v2': {} } });
 
     expect(resolve(
       '../files/foo',
@@ -281,7 +281,7 @@ describe('resolve', function () {
     });
 
     it('finds resolvers from the source files rather than eslint-module-utils', function () {
-      const testContext = utils.testContext({ 'import/resolver': { foo: {} } });
+      const testContext = utils.testContext({ 'import/resolver': { './foo-bar-resolver-v2': {} } });
 
       expect(resolve(
         '../files/foo',

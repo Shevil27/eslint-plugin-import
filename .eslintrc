@@ -265,4 +265,13 @@
             },
         },
     ],
+    "ignorePatterns": [
+        "tests/files/broken-trampoline.js",
+        "tests/files/cycles/flow-typeof.js",
+        "tests/files/default-export-from.js",
+        "tests/files/flowtypes.js",
+        "tests/files/issue-195/Endpoints.js",
+        "tests/files/named-trampoline.js",
+        "tests/files/trampoline.js",
+    ],
 }
