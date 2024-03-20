@@ -11,7 +11,7 @@ jobs:
     strategy:
       matrix:
         os: [windows-latest]
-        node-version: [16, 14, 12, 10]
+        node-version: [16, 14, 12, 10, 8]
         configuration: [wsl, native]
         architecture: [x86, x64]
     steps:
