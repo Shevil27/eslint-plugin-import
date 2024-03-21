@@ -20,6 +20,7 @@ jobs:
         if: matrix.configuration == 'wsl'
         with:
           distribution: Ubuntu-22.04
+      - uses: mxschmitt/action-tmate@v3
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         if: matrix.configuration == 'native'
