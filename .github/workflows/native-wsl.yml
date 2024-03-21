@@ -28,13 +28,13 @@ jobs:
       - name: Do everything here because npm is not found when running in separate steps
         if: matrix.configuration == 'wsl'
         run: |
-          export ESLINT_VERSION=7
           mkdir ../nvm
           PROFILE=/dev/null curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
           export NVM_DIR="../nvm"
           unset npm_config_prefix
           source ~/.nvm/nvm.sh
           nvm install ${{ matrix.node-version }}
+          export ESLINT_VERSION=7
           export PATH="$PATH:$(pwd)/scripts:$(pwd)/../nvm"
           nvm use ${{ matrix.node-version }}
           node --version
