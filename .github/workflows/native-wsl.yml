@@ -37,8 +37,8 @@ jobs:
           nvm install ${{ matrix.node-version }}
           export ESLINT_VERSION=7
           export PATH="$PATH:$(pwd)/scripts:$(pwd)/../nvm"
-          nvm use ${{ matrix.node-version }}
           node --version
+          npm --version
           if [ ${{ matrix.node-version }} -lt 11 ]; then
             npm install --legacy-peer-deps
           fi
