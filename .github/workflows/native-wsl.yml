@@ -28,6 +28,7 @@ jobs:
       - name: Do everything here because npm is not found when running in separate steps
         if: matrix.configuration == 'wsl'
         run: |
+          export ESLINT_VERSION=7
           mkdir ../nvm
           PROFILE=/dev/null curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
           export NVM_DIR="../nvm"
@@ -37,13 +38,15 @@ jobs:
           export PATH="$PATH:$(pwd)/scripts:$(pwd)/../nvm"
           nvm use ${{ matrix.node-version }}
           node --version
+          if [ ${{ matrix.node-version }} -ge 11 ]; then
+            set ESLINT_VERSION=8
+          fi
           if [ ${{ matrix.node-version }} -lt 11 ]; then
             npm install --legacy-peer-deps
           fi
           if [ ${{ matrix.node-version }} -gt 10 ]; then
             npm install
           fi
-          set TRAVIS_NODE_VERSION=${{ matrix.node-version }}
           if [ ${{ matrix.node-version }} -gt 8 ]; then
             set ESLINT_VERSION=6
             npm install
@@ -52,9 +55,6 @@ jobs:
           fi
           if [ ${{ matrix.node-version }} -le 8 ]; then
             set ESLINT_VERSION=6
-          fi
-          if [ ${{ matrix.node-version }} -ge 11 ]; then
-            set ESLINT_VERSION=8
           fi
           npm run copy-metafiles
           # bash ./tests/dep-time-travel.sh 2>&1
@@ -105,18 +105,18 @@ jobs:
         if: matrix.node-version <= '10' && matrix.configuration == 'native'
         run: |
           npm install --legacy-peer-deps
-          npm install eslint@7.32.0 --no-save
+          npm install eslint@${ESLINT_VERSION} --no-save
       - name: Copy metafiles for Node > 8
         if: matrix.node-version > 8 && matrix.configuration == 'native'
         env:
-          ESLINT_VERSION: 7
+          ESLINT_VERSION: 6
           TRAVIS_NODE_VERSION: ${{ matrix.node-version }}
         run: |
           npm run copy-metafiles
           bash ./tests/dep-time-travel.sh 2>&1
       - name: Install the latest version of nyc
         if: matrix.configuration == 'native' && matrix.node-version <10 && matrix.node-version >=8
-        run: npm install nyc@latest --no-save
+        run: npm install nyc@$14 --no-save
       - name: Copy metafiles for Node <= 8
         if: matrix.node-version <= 8 && matrix.configuration == 'native'
         env:
