@@ -44,7 +44,7 @@ jobs:
           if [ ${{ matrix.node-version }} -gt 10 ]; then
             npm install
           fi
-          set NYC_VERSION = 14
+          set NYC_VERSION = $(npm show nyc version)
           npm install nyc@latest --no-save
           set TRAVIS_NODE_VERSION=${{ matrix.node-version }}
           if [ ${{ matrix.node-version }} -le 8 ]; then
@@ -53,6 +53,7 @@ jobs:
           if[ ${{matrix.node-version }} -eq 8]; then
             set ESLINT_VERSION=6
             npm install
+            set NYC_VERSION = 14
             npm i spawn-wrap@1.4.3 eslint@6 globby@11.0.1--no-save
             rm -rf node_modules/@typescript-eslint/typescript-estree/node_modules/globby
           fi
@@ -82,7 +83,7 @@ jobs:
               npm install
               npm ls nyc > /dev/null
               if [ $? -eq 0 ]; then
-                npm install nyc@latest --no-save
+                npm install nyc@${NYC_VERSION} --no-save
               fi
               popd
             fi  # Close the if statement here
@@ -121,7 +122,7 @@ jobs:
           bash ./tests/dep-time-travel.sh 2>&1
       - name: Install the latest version of nyc
         if: matrix.configuration == 'native' && matrix.node-version <10 && matrix.node-version >=8
-        run: npm install nyc@$14 --no-save
+        run: npm install nyc@${NYC_VERSION} --no-save
       - name: Copy metafiles for Node <= 8
         if: matrix.node-version <= 8 && matrix.configuration == 'native'
         env:
@@ -129,7 +130,7 @@ jobs:
           TRAVIS_NODE_VERSION: ${{ matrix.node-version }}
         run: |
           npm run copy-metafiles
-          bash ./tests/dep-time-travel.sh 2>&1
+          # bash ./tests/dep-time-travel.sh 2>&1
 
       - name: Config git to allow symlinks
         if: matrix.configuration == 'native'
@@ -149,7 +150,7 @@ jobs:
                 npm install
                 npm ls nyc > $null;
                 if ($?) {
-                  npm install nyc@latest --no-save
+                  npm install nyc@${NYC_VERSION} --no-save
                 }
                 Pop-Location
               }
