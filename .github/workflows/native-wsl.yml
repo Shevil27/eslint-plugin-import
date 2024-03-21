@@ -38,25 +38,31 @@ jobs:
           export PATH="$PATH:$(pwd)/scripts:$(pwd)/../nvm"
           nvm use ${{ matrix.node-version }}
           node --version
-          if [ ${{ matrix.node-version }} -ge 11 ]; then
-            set ESLINT_VERSION=8
-          fi
           if [ ${{ matrix.node-version }} -lt 11 ]; then
-            npm install --legacy-peer-deps
+          npm install --legacy-peer-deps
           fi
           if [ ${{ matrix.node-version }} -gt 10 ]; then
             npm install
           fi
-          if [ ${{ matrix.node-version }} -gt 8 ]; then
-            set ESLINT_VERSION=6
-            npm install
-            npm i spawn-wrap@1.4.3 eslint@6 nyc@14 globby@11.0.1--no-save
-            rm -rf node_modules/@typescript-eslint/typescript-estree/node_modules/globby
-          fi
+          set NYC_VERSION = 14
+          npm install nyc@latest --no-save
+          set TRAVIS_NODE_VERSION=${{ matrix.node-version }}
           if [ ${{ matrix.node-version }} -le 8 ]; then
             set ESLINT_VERSION=6
           fi
-          npm run copy-metafiles
+          if[ ${{matrix.node-version }} -eq 8]; then
+            set ESLINT_VERSION=6
+            npm install
+            npm i spawn-wrap@1.4.3 eslint@6 globby@11.0.1--no-save
+            rm -rf node_modules/@typescript-eslint/typescript-estree/node_modules/globby
+          fi
+          if [ ${{ matrix.node-version }} -gt 8 ]; then
+            set ESLINT_VERSION=7
+          fi
+          if [ ${{ matrix.node-version }} -ge 11 ]; then
+            set ESLINT_VERSION=8
+          fi
+          # npm run copy-metafiles
           # bash ./tests/dep-time-travel.sh 2>&1
           npm install eslint@${ESLINT_VERSION} --no-save --ignore-scripts
           if [ ${{ matrix.node-version }} -lt 12 ]; then
@@ -66,7 +72,6 @@ jobs:
             npm i --no-save eslint-plugin-import@'.' -f
             npm run build
           fi
-
           git config core.symlinks true
           git reset --hard
           npm config set package-lock false
