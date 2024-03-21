@@ -1,4 +1,4 @@
-name: Native and WSL
+name: Native and WSL Temp
 
 on: [push, pull_request]
 
@@ -34,7 +34,6 @@ jobs:
           unset npm_config_prefix
           source ~/.nvm/nvm.sh
           nvm install ${{ matrix.node-version }}
-          export ESLINT_VERSION=7
           export PATH="$PATH:$(pwd)/scripts:$(pwd)/../nvm"
           nvm use ${{ matrix.node-version }}
           node --version
@@ -181,3 +180,4 @@ jobs:
           flags: unittests # optional
           name: codecov-umbrella # optional
           fail_ci_if_error: true # optional (default = false)
+
