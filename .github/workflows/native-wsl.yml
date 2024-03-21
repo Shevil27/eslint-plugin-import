@@ -150,7 +150,7 @@ jobs:
                 npm install
                 npm ls nyc > $null;
                 if ($?) {
-                  npm install nyc@${NYC_VERSION} --no-save
+                  npm install nyc@latest --no-save
                 }
                 Pop-Location
               }
