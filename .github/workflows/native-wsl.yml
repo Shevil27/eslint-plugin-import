@@ -63,6 +63,7 @@ jobs:
           fi
           if [ ${{ matrix.node-version }} -ge 11 ]; then
             set ESLINT_VERSION=8
+            npm install -g npm@10.5.0
           fi
           # npm run copy-metafiles
           # bash ./tests/dep-time-travel.sh 2>&1
