@@ -39,17 +39,13 @@ jobs:
           export PATH="$PATH:$(pwd)/scripts:$(pwd)/../nvm"
           node --version
           npm --version
-          if [ ${{ matrix.node-version }} -eq 16 ]; then
-            npm install -g npm@latest
-          fi
           if [ ${{ matrix.node-version }} -lt 11 ]; then
             npm install --legacy-peer-deps
           fi
           if [ ${{ matrix.node-version }} -gt 10 ]; then
             npm install
           fi
-          set NYC_VERSION = $(npm show nyc version)
-          npm install nyc@latest --no-save
+          set NYC_VERSION = $(npm show nyc@latest version)
           set TRAVIS_NODE_VERSION=${{ matrix.node-version }}
           if [ ${{ matrix.node-version }} -le 8 ]; then
             set ESLINT_VERSION=6
