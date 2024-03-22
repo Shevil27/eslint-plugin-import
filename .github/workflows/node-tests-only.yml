@@ -1,14 +1,14 @@
 name: Node.js tests-only
 
-on:
-  [push, pull_request]
+on: [push, pull_request]
 
 jobs:
   testonly:
-    runs-on: macos-latest
+    runs-on: ${{ matrix.os }}
 
     strategy:
       matrix:
+        os: [macos-latest, ubuntu-latest]
         node_version: [14, 12, 10, 8, 6, 4]
         eslint_version: [5, 4, 3, 2]
 
@@ -51,4 +51,3 @@ jobs:
 
       - name: Upload coverage report to Codecov
         uses: codecov/codecov-action@v4
-
