@@ -39,6 +39,9 @@ jobs:
           export PATH="$PATH:$(pwd)/scripts:$(pwd)/../nvm"
           node --version
           npm --version
+          if [ ${{ matrix.node-version }} -eq 16 ]; then
+            npm install -g npm@latest
+          fi
           if [ ${{ matrix.node-version }} -lt 11 ]; then
             npm install --legacy-peer-deps
           fi
